@@ -2,6 +2,7 @@ package com.example.how.ui
 
 // Tela das tarefas "Feitas".
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,7 +29,6 @@ class DoneFragment : BaseFragment() {
 
     private lateinit var taskAdapter: TaskAdapter
 
-    private val tasklist = mutableListOf<Task>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,7 +41,8 @@ class DoneFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
+        initAdapter()
+        // Inicializa o adaptador para exibir as tarefas
         getTasks()
     }
     private fun getTasks(){
@@ -54,7 +55,7 @@ class DoneFragment : BaseFragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
 
-                        tasklist.clear()
+                        val tasklist = mutableListOf<Task>()
                         for (snap in snapshot.children) {
                             val task = snap.getValue(Task::class.java) as Task
 
@@ -62,10 +63,10 @@ class DoneFragment : BaseFragment() {
                         }
 
                         tasklist.reverse()
-                        initAdapter()
+                        taskAdapter.submitList(tasklist)
+                        tasksEmpty(tasklist)
                     }
 
-                    tasksEmpty()
 
                     binding.progresssBar.isVisible = false
                 }
@@ -77,8 +78,8 @@ class DoneFragment : BaseFragment() {
             })
     }
 
-    private fun tasksEmpty(){
-        binding.info.text = if(tasklist.isEmpty()){
+    private fun tasksEmpty(taskList: List<Task>){
+        binding.info.text = if(taskList.isEmpty()){
             getText(R.string.text_task_list_empty_done_fragment)
         }else {
             ""
@@ -87,7 +88,7 @@ class DoneFragment : BaseFragment() {
     private fun initAdapter(){
         binding.rvTask.layoutManager = LinearLayoutManager(requireContext())
         binding.rvTask.setHasFixedSize(true)
-        taskAdapter = TaskAdapter(requireContext(), tasklist) {task, select ->
+        taskAdapter = TaskAdapter(requireContext()) {task, select ->
             optionSelect(task, select)
         }
         binding.rvTask.adapter = taskAdapter
@@ -131,16 +132,40 @@ class DoneFragment : BaseFragment() {
                 Toast.makeText(requireContext(), "Erro ao salvar a tarefa.", Toast.LENGTH_SHORT).show()
             }
     }
-    private fun deleteTask(task: Task){ //REMOVE A TAREFA SELECIONADA.
+    private fun deleteTask(task: Task) {
+        val alertDialogBuilder = AlertDialog.Builder(requireContext())
+        alertDialogBuilder.setTitle("Remover tarefa")
+        alertDialogBuilder.setMessage("Você tem certeza que deseja remover esta tarefa?")
+        alertDialogBuilder.setPositiveButton("Remover") { _, _ ->
+
+            confirmDeleteTask(task)
+        }
+
+        alertDialogBuilder.setNegativeButton("Cancelar", null)
+
+        val alertDialog = alertDialogBuilder.create()
+        alertDialog.show()
+    }
+    private fun confirmDeleteTask(task: Task) {
         FirebaseHelper
             .getDatabase()
             .child("task")
             .child(FirebaseHelper.getIdUser() ?: "")
             .child(task.id)
             .removeValue()
-
-        tasklist.remove(task)
-        taskAdapter.notifyDataSetChanged()
+            .addOnCompleteListener { task ->
+                if(task.isSuccessful){
+                    Toast.makeText(
+                        requireContext(),
+                        "Tarefa removida com sucesso.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Não foi possivel remover a tarefa.", Toast.LENGTH_SHORT)
+                    .show()
+            }
     }
     override fun onDestroyView() {
         super.onDestroyView()

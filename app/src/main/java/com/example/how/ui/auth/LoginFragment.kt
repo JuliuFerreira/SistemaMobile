@@ -50,8 +50,6 @@ class LoginFragment : BaseFragment() {
         }
     }
 
-
-
     private fun validateData(){
         val email = binding.edtEmail.text.toString().trim()
         val password = binding.edtPassword.text.toString().trim()

@@ -2,6 +2,7 @@ package com.example.how.ui
 
 // Tela das tarefas "A fazer".
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,8 +29,6 @@ class TodoFragment : Fragment() { //
 
     private lateinit var taskAdapter: TaskAdapter
 
-    private val tasklist = mutableListOf<Task>()
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,7 +41,7 @@ class TodoFragment : Fragment() { //
         super.onViewCreated(view, savedInstanceState)
 
         initClicks()
-
+        initAdapter()
         getTasks()
     }
     private fun initClicks(){
@@ -63,19 +62,19 @@ class TodoFragment : Fragment() { //
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
 
-                        tasklist.clear()
+                        val tasklist = mutableListOf<Task>()
                         for (snap in snapshot.children) {
                             val task = snap.getValue(Task::class.java) as Task
 
                             if (task.status == 0) tasklist.add(task)
                         }
 
-
                         tasklist.reverse()
-                        initAdapter()
+                        taskAdapter.submitList(tasklist)
+                        tasksEmpty(tasklist)
                     }
 
-                    tasksEmpty()
+
 
                     binding.progresssBar.isVisible = false
                 }
@@ -86,7 +85,7 @@ class TodoFragment : Fragment() { //
             })
     }
 
-    private fun tasksEmpty(){
+    private fun tasksEmpty(tasklist: List<Task>){
         binding.info.text = if(tasklist.isEmpty()){
             getText(R.string.text_task_list_empty_todo_fragment)
         }else {
@@ -97,12 +96,12 @@ class TodoFragment : Fragment() { //
     private fun initAdapter(){
         binding.rvTask.layoutManager = LinearLayoutManager(requireContext())
         binding.rvTask.setHasFixedSize(true)
-        taskAdapter = TaskAdapter(requireContext(), tasklist) {task, select ->
+        taskAdapter = TaskAdapter(requireContext()) {task, select ->
             optionSelect(task, select)
         }
         binding.rvTask.adapter = taskAdapter
     }
-    private fun optionSelect(task: Task,select: Int ){ // Navega para as telas de editar e excluir.
+    private fun optionSelect(task: Task,select: Int ){
         when(select){
             TaskAdapter.SELECT_REMOVE -> {
                 deleteTask(task)
@@ -141,16 +140,40 @@ class TodoFragment : Fragment() { //
                 Toast.makeText(requireContext(), "Erro ao salvar a tarefa.", Toast.LENGTH_SHORT).show()
             }
     }
-    private fun deleteTask(task: Task){ //REMOVE A TAREFA SELECIONADA.
+    private fun deleteTask(task: Task) {
+        val alertDialogBuilder = AlertDialog.Builder(requireContext())
+        alertDialogBuilder.setTitle("Remover tarefa")
+        alertDialogBuilder.setMessage("Você tem certeza que deseja remover esta tarefa?")
+        alertDialogBuilder.setPositiveButton("Remover") { _, _ ->
+
+            confirmDeleteTask(task)
+        }
+
+        alertDialogBuilder.setNegativeButton("Cancelar", null)
+
+        val alertDialog = alertDialogBuilder.create()
+        alertDialog.show()
+    }
+    private fun confirmDeleteTask(task: Task) {
         FirebaseHelper
             .getDatabase()
             .child("task")
             .child(FirebaseHelper.getIdUser() ?: "")
             .child(task.id)
             .removeValue()
-
-        tasklist.remove(task)
-        taskAdapter.notifyDataSetChanged()
+            .addOnCompleteListener { task ->
+                if(task.isSuccessful){
+                    Toast.makeText(
+                        requireContext(),
+                        "Tarefa removida com sucesso.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Não foi possivel remover a tarefa.", Toast.LENGTH_SHORT)
+                    .show()
+            }
     }
     override fun onDestroyView() {
         super.onDestroyView()

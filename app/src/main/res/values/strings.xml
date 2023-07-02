@@ -9,6 +9,9 @@
     <string name="text_recover_fragment">Recuperar conta</string>
     <string name="text_reset_password">Trocar senha</string>
     <string name="error_generic">Ocorreu um erro, por favor, tente novamente mais tarde.</string>
+    <string name="valid_email_password">Informe um e-mail e uma senha de 6 digitos</string>
+    <string name="confirmar">confirmar</string>
+
 
 
     <!--    Login Fragment-->

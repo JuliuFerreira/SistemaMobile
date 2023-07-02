@@ -1,5 +1,6 @@
 package com.example.how.ui
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -62,40 +63,38 @@ class HomeFragment : Fragment() {
 
 
     private fun initClicks() {
-        // Função responsável por inicializar os cliques de eventos para os elementos de layout.
-
         binding.ibLogout.setOnClickListener { logoutApp() }
-        // Configura um clique de evento para o elemento ibLogout (um botão de logout),
-        // para chamar a função logoutApp() quando o botão for clicado.
 
         binding.ibRemove.setOnClickListener {
-            val user = FirebaseAuth.getInstance().currentUser
-
-            user?.delete()
-                ?.addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        showBottomSheet(
-                            message = R.string.text_delete_account
-                        )
-
-                        FirebaseAuth.getInstance().signOut()
-                        findNavController().navigate(R.id.action_homeFragment_to_authentication)
-
-                    } else {
-                        showBottomSheet(
-                            message = R.string.erro_delete_account
-                        )
-                    }
-                }
-            // Lógica para exclusão da conta
-
-
+            val alertDialogBuilder = AlertDialog.Builder(requireContext())
+            alertDialogBuilder.setTitle("Excluir Conta")
+            alertDialogBuilder.setMessage("Tem certeza de que deseja excluir sua conta?")
+            alertDialogBuilder.setPositiveButton("Excluir") { _, _ ->
+                deleteAccount()
             }
+            alertDialogBuilder.setNegativeButton("Cancelar", null)
+
+            val alertDialog = alertDialogBuilder.create()
+            alertDialog.show()
+        }
 
         binding.ibEdit.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_resetPasswordFragment32)
         }
+    }
 
+    private fun deleteAccount() {
+        val user = FirebaseAuth.getInstance().currentUser
+        user?.delete()
+            ?.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    showBottomSheet(message = R.string.text_delete_account)
+                    FirebaseAuth.getInstance().signOut()
+                    findNavController().navigate(R.id.action_homeFragment_to_authentication)
+                } else {
+                    showBottomSheet(message = R.string.erro_delete_account)
+                }
+            }
     }
 
     private fun logoutApp(){

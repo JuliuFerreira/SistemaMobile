@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.navigation.fragment.findNavController
 import com.example.how.R
@@ -12,6 +11,7 @@ import com.example.how.databinding.FragmentRegisterBinding
 import com.example.how.helper.BaseFragment
 import com.example.how.helper.FirebaseHelper
 import com.example.how.helper.initToolbar
+import com.example.how.helper.showBottomSheet
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -63,11 +63,14 @@ class RegisterFragment : BaseFragment() {
 
             } else{
 
-                Toast.makeText(requireContext(), "Informe sua senha", Toast.LENGTH_SHORT).show()
+                showBottomSheet(
+                    message = R.string.valid_email_password
+                )
             }
-         } else{
-
-            Toast.makeText(requireContext(), "Informe seu Email", Toast.LENGTH_SHORT).show()
+        } else{
+                showBottomSheet(
+                    message = R.string.valid_email_password
+            )
         }
     }
 
@@ -78,11 +81,9 @@ class RegisterFragment : BaseFragment() {
                 if (task.isSuccessful) {
                     findNavController().navigate(R.id.action_global_homeFragment)
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        FirebaseHelper.validError(task.exception?.message ?:""),
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showBottomSheet(
+                        message = FirebaseHelper.validError(task.exception?.message ?:"")
+                    )
                     binding.progresssBar.isVisible = false
                 }
             }

@@ -3,6 +3,7 @@ package com.example.how.ui
 // Tela das tarefas "Fazendo".
 
 //Importa as classes do projeto
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -41,9 +42,6 @@ class DoingFragment : Fragment() {
     // Adaptador responsável por exibir a lista de tarefas no RecyclerView
 
 
-    private val tasklist = mutableListOf<Task>()
-    // Lista de tarefas em andamento
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,7 +61,8 @@ class DoingFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         // Executa as ações necessárias ao criar a visualização do fragmento
 
-
+        initAdapter()
+        // Inicializa o adaptador para exibir as tarefas
         getTasks()
         // Chamada do método getTasks()
     }
@@ -77,7 +76,7 @@ class DoingFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
 
-                        tasklist.clear()
+                        val tasklist = mutableListOf<Task>()
                         // Limpa a lista de tarefas antes de preenchê-la novamente
 
 
@@ -96,13 +95,11 @@ class DoingFragment : Fragment() {
 
                         tasklist.reverse()
                         // Inverte a ordem da lista de tarefa
-
-
-                        initAdapter()
-                        // Inicializa o adaptador para exibir as tarefas
+                        taskAdapter.submitList(tasklist)
+                        tasksEmpty(tasklist)
 
                     }
-                    tasksEmpty()
+
 
                     binding.progresssBar.isVisible = false
                     // Torna a barra de progresso invisível
@@ -119,7 +116,7 @@ class DoingFragment : Fragment() {
             })
     }
 
-    private fun tasksEmpty(){
+    private fun tasksEmpty(tasklist: List<Task>){
         binding.info.text = if(tasklist.isEmpty()){
             getText(R.string.text_task_list_empty_doing_fragment)
         }else {
@@ -134,7 +131,7 @@ class DoingFragment : Fragment() {
          */
         binding.rvTask.layoutManager = LinearLayoutManager(requireContext())
         binding.rvTask.setHasFixedSize(true)
-        taskAdapter = TaskAdapter(requireContext(), tasklist) {task, select ->
+        taskAdapter = TaskAdapter(requireContext()) {task, select ->
             optionSelect(task, select)
         }
         binding.rvTask.adapter = taskAdapter
@@ -173,8 +170,8 @@ class DoingFragment : Fragment() {
 
         }
     }
-    private fun updateTask(task: Task){
-        // Atualiza a tarefa no banco de dados Firebase
+    private fun updateTask(task: Task){ //salvar no banco de dados (firebase)
+
         FirebaseHelper
             .getDatabase()
             .child("task")
@@ -188,35 +185,48 @@ class DoingFragment : Fragment() {
                         "Tarefa atualizada com sucesso.",
                         Toast.LENGTH_SHORT
                     ).show()
-                    // Exibe uma mensagem de sucesso ao atualizar a tarefa
                 }else{
-                    Toast.makeText(
-                        requireContext(),
-                        "Erro ao salvar a tarefa.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    // Exibe uma mensagem de erro ao salvar a tarefa
+                    Toast.makeText(requireContext(), "Erro ao salvar a tarefa.", Toast.LENGTH_SHORT).show()
                 }
             }.addOnFailureListener {
                 binding.progresssBar.isVisible = false
                 Toast.makeText(requireContext(), "Erro ao salvar a tarefa.", Toast.LENGTH_SHORT).show()
-                // Exibe uma mensagem de erro ao salvar a tarefa e torna a barra de progresso invisível
             }
     }
-    private fun deleteTask(task: Task){
-        // Remove a tarefa do banco de dados Firebase
+    private fun deleteTask(task: Task) {
+        val alertDialogBuilder = AlertDialog.Builder(requireContext())
+        alertDialogBuilder.setTitle("Remover tarefa")
+        alertDialogBuilder.setMessage("Você tem certeza que deseja remover esta tarefa?")
+        alertDialogBuilder.setPositiveButton("Remover") { _, _ ->
+
+            confirmDeleteTask(task)
+        }
+
+        alertDialogBuilder.setNegativeButton("Cancelar", null)
+
+        val alertDialog = alertDialogBuilder.create()
+        alertDialog.show()
+    }
+    private fun confirmDeleteTask(task: Task) {
         FirebaseHelper
             .getDatabase()
             .child("task")
             .child(FirebaseHelper.getIdUser() ?: "")
             .child(task.id)
             .removeValue()
-
-        tasklist.remove(task)
-        // Remove a tarefa da lista de tarefas exibida
-
-        taskAdapter.notifyDataSetChanged()
-        // Notifica o adaptador de tarefas sobre a mudança na lista de tarefas
+            .addOnCompleteListener { task ->
+                if(task.isSuccessful){
+                    Toast.makeText(
+                        requireContext(),
+                        "Tarefa removida com sucesso.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Não foi possivel remover a tarefa.", Toast.LENGTH_SHORT)
+                    .show()
+            }
     }
     override fun onDestroyView() {
         super.onDestroyView()
