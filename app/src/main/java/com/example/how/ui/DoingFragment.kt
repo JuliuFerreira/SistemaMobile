@@ -116,11 +116,11 @@ class DoingFragment : Fragment() {
             })
     }
 
-    private fun tasksEmpty(tasklist: List<Task>){
+    private fun tasksEmpty(tasklist: List<Task>){ // Define o texto da view 'info' com base na lista de tarefas
         binding.info.text = if(tasklist.isEmpty()){
-            getText(R.string.text_task_list_empty_doing_fragment)
+            getText(R.string.text_task_list_empty_doing_fragment) // exibe uma mensagem quando a lista de tarefas estiver vazia
         }else {
-            ""
+            "" // caso contrário, deixa o texto vazio
         }
     }
     private fun initAdapter(){
@@ -195,17 +195,18 @@ class DoingFragment : Fragment() {
     }
     private fun deleteTask(task: Task) {
         val alertDialogBuilder = AlertDialog.Builder(requireContext())
-        alertDialogBuilder.setTitle("Remover tarefa")
-        alertDialogBuilder.setMessage("Você tem certeza que deseja remover esta tarefa?")
+        alertDialogBuilder.setTitle("Remover tarefa") // Define o título da caixa de diálogo de confirmação
+        alertDialogBuilder.setMessage("Você tem certeza que deseja remover esta tarefa?") // Define a mensagem da caixa de diálogo de confirmação
         alertDialogBuilder.setPositiveButton("Remover") { _, _ ->
 
             confirmDeleteTask(task)
         }
 
         alertDialogBuilder.setNegativeButton("Cancelar", null)
+        // Chama o método confirmDeleteTask() ao clicar no botão "Remover" da caixa de diálogo
 
         val alertDialog = alertDialogBuilder.create()
-        alertDialog.show()
+        alertDialog.show() // Mostra a caixa de diálogo de confirmação
     }
     private fun confirmDeleteTask(task: Task) {
         FirebaseHelper
@@ -215,7 +216,7 @@ class DoingFragment : Fragment() {
             .child(task.id)
             .removeValue()
             .addOnCompleteListener { task ->
-                if(task.isSuccessful){
+                if(task.isSuccessful){ // Exibe um toast para informar que a tarefa foi removida com sucesso
                     Toast.makeText(
                         requireContext(),
                         "Tarefa removida com sucesso.",
@@ -223,7 +224,7 @@ class DoingFragment : Fragment() {
                     ).show()
                 }
             }
-            .addOnFailureListener {
+            .addOnFailureListener {// Exibe um toast para informar que não foi possível remover a tarefa
                 Toast.makeText(requireContext(), "Não foi possivel remover a tarefa.", Toast.LENGTH_SHORT)
                     .show()
             }

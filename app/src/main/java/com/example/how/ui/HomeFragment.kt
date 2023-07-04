@@ -62,24 +62,27 @@ class HomeFragment : Fragment() {
 
 
 
-    private fun initClicks() {
+    private fun initClicks() { // Inicializa os cliques e eventos para elementos interativos.
         binding.ibLogout.setOnClickListener { logoutApp() }
+        // Clique no botão de logout
 
         binding.ibRemove.setOnClickListener {
+            // Clique no botão de remover conta
             val alertDialogBuilder = AlertDialog.Builder(requireContext())
-            alertDialogBuilder.setTitle("Excluir Conta")
+            alertDialogBuilder.setTitle("Excluir Conta") // Define o título da caixa de diálogo de confirmação
             alertDialogBuilder.setMessage("Tem certeza de que deseja excluir sua conta?")
             alertDialogBuilder.setPositiveButton("Excluir") { _, _ ->
-                deleteAccount()
+                deleteAccount() // Chama o método deleteAccount() ao clicar no botão "Excluir" da caixa de diálogo
             }
-            alertDialogBuilder.setNegativeButton("Cancelar", null)
+            alertDialogBuilder.setNegativeButton("Cancelar", null) // Define o botão "Cancelar" da caixa de diálogo
 
             val alertDialog = alertDialogBuilder.create()
-            alertDialog.show()
+            alertDialog.show() // Mostra a caixa de diálogo de confirmação
         }
 
-        binding.ibEdit.setOnClickListener {
+        binding.ibEdit.setOnClickListener { // Clique no botão de editar
             findNavController().navigate(R.id.action_homeFragment_to_resetPasswordFragment32)
+            // Navega para o fragmento de redefinição de senha
         }
     }
 
@@ -88,11 +91,12 @@ class HomeFragment : Fragment() {
         user?.delete()
             ?.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    // Exibe uma bottom sheet com a mensagem de sucesso ao excluir a conta
                     showBottomSheet(message = R.string.text_delete_account)
-                    FirebaseAuth.getInstance().signOut()
-                    findNavController().navigate(R.id.action_homeFragment_to_authentication)
+                    FirebaseAuth.getInstance().signOut() // Faz logout do usuário atual
+                    findNavController().navigate(R.id.action_homeFragment_to_authentication) // Navega para o fragmento de autenticação
                 } else {
-                    showBottomSheet(message = R.string.erro_delete_account)
+                    showBottomSheet(message = R.string.erro_delete_account) // Exibe uma bottom sheet com a mensagem de erro ao excluir a conta
                 }
             }
     }
